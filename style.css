@@ -1,0 +1,78 @@
+body {
+  overflow-y: scroll;
+	background-color: #EBE7E1;
+	font-size: 18px;
+}
+
+#page {
+  max-width: 480px;
+  margin: 0 auto;
+  font-family: sans-serif;
+}
+
+.message {
+  padding: 0.75em; 
+  margin-bottom: 1em; 
+  overflow: auto;
+  border-radius: 8px;
+}
+
+
+.message {
+  background:#F9FAF9;
+  color: #000;
+	box-shadow: 1px 1px 3px #eaeaea;
+	border: 1px solid #eaeaea;
+}
+
+.message.me {
+  background:#E1F6CA;
+  color: #000;
+}
+
+.message .lines {
+  overflow: auto;
+  word-wrap: break-word;
+}
+
+.message .media img {
+  max-width: 100%;
+  height: auto;
+}
+
+.meta {
+	margin-top: 5px;
+  font-size: small;
+  opacity: 0.5;
+}
+
+.meta .username,
+.meta .timestamp {
+	width: 50%;
+	display: inline-block;
+}
+
+.meta .timestamp {
+	text-align: right;
+}
+
+
+.pagination ul {
+  padding: 0;
+  list-style: none;
+}
+
+.pagination li {
+  display: inline-block;
+  padding: 2px;
+  margin: 2px;
+}
+
+.pagination li:last-child {
+  float: right;
+}
+
+
+.help {
+	font-size: small;
+}
