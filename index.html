@@ -1,33 +1,264 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="de-DE">
 <head>
 	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<title>Chat</title>
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<title>WhatsApp Chat</title>
+	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
 	<link rel="stylesheet" href="style.css" />
+	<style>
+[v-cloak] {
+	display: none;
+}
+html {
+	overflow-y: scroll;
+}
+	</style>
 </head>
-<body> 
+<body>
 
-<div id="page">
-<h1>WhatsApp Chat</h1>
+<div id="app" v-cloak>
+	<h1>WhatsApp Chat</h1>
 
-<div id="chat">lade Chat ...</div>
-<div class="pagination"></div>
+		<div v-if="messages.length == 0">
+			loading ...
+		</div>
+		<template v-else v-for="message in pagedMessages" >
+			<div class="message" :class="{me: message.me}">
+				<div class="lines">
+					<div class="line" v-for="line in message.lines" v-html="line"></div>
+				</div>
+				<div class="meta">
+					<div class="username">{{message.username}}</div>
+					<div class="timestamp">{{message.timestamp}}</div>
+				</div>
+			</div>
+		</template>
 
-<div class="help">
-	Shift+Mousewheel or Arrow Keys to switch pages
+		<div class="help noprint">
+			Arrow Keys or Shift+Mousewheel to switch pages
+		</div>
+
+		<div class="noprint">
+			<ul class="pagination" v-if="pagedMessages.length != messagesCount">
+				<li v-if="false" @click="pageChangeHandle('previous')" class="page-item">&#171;</li>
+				<li @click="pageChangeHandle(1)" :class="[currentPage==1 ? 'active' : '']" class="page-item">1</li>
+				<li v-if="currentPage > (navNum*2)-1">&hellip;</li>
+				<template v-for="n in range(currentPage-navNum, currentPage+navNum, 1)">
+					<li v-if="n > 1 && n < pageCount" @click="pageChangeHandle(n)" class="page-item" :class="[currentPage==n ? 'active' : '']">{{n}}</li>
+				</template>
+				<li v-if="currentPage < pageCount-navNum-1">&hellip;</li>
+				<li @click="pageChangeHandle(pageCount)" class="page-item" :class="[currentPage==pageCount ? 'active' : '']">{{pageCount}}</li>
+				<li v-if="false" @click="pageChangeHandle('next')" class="page-item">&#187;</li>
+			</ul>
+			<p>
+				<button v-if="pagedMessages.length != messagesCount" @click="showAll()">Alle Anzeigen</button>
+			</p>
+	</div>
+
+		<p v-if="messages.length > 0">
+			Es wurden {{messagesCount}} Nachrichten über {{timespan}} Tagen geladen.
+			Zeitraum: {{firstMessageDate | formatDate}} bis {{lastMessageDate | formatDate}}
+		</p>
+	
 </div>
 
-</div> <!-- #page -->
-
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.2/mustache.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/paginationjs/2.1.5/pagination.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
 <script>
-var myNames = ["Admin", "Marco"]; // Your Whats App Username
+var myNames = ["Admin", "Marco"]; // Your Whats App Names in Messages
 var perPage = 5;
+var jumpToLastPage = true;
+
+const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+
+var app = new Vue({
+	el: '#app',
+	data: function() {
+		return {
+			messages: [],
+			perPage: perPage,
+			currentPage: 1,
+			navNum: 2,
+			stats: null
+		}
+	},
+	mounted: function() {
+		var that = this;
+		axios.get('WhatsApp_Chat.txt')
+		.then(function (res) {
+			//console.log(res.data);
+			var data = res.data;
+			data = data.replace(/\u200E/g, ""); // Left-To-Right Mark
+
+			var lines = data.split(/(\n|\r)/);
+
+			//lines = lines.slice(0, 200)
+
+			var message;
+			lines.forEach(function(line) {
+				line = line.replace(/(\r\n|\n|\r)/gm, "").trim();
+				if(line.length == 0) { return; } 
+				var newMessage = /^\[[0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2}.*/.test(line);
+
+				if(newMessage && message) {
+					that.messages.push(message);       
+				}
+
+				if(newMessage) {
+					message = {};
+					message.lines = []; 
+					// Timestamp
+					var tmpTimestamp = line.match(/^\[([0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2})\]/);
+					if(tmpTimestamp) {
+						message.timestamp = tmpTimestamp[1];
+					}          
+				}
+
+				// Special Chars
+				line = line.replace(/</g, '&lt;');
+
+				// Media
+				line = line.replace(/([a-zA-Z0-9-]+\.jpg)\ &lt;angeh�ngt>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
+				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.jpg)\>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
+
+				// Username
+				var tmpUsername = line.match(/^\[[0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2}\] (.+?):/);
+				if(tmpUsername) {
+					message.username = tmpUsername[1];
+					message.me = (myNames.indexOf(tmpUsername[1]) > -1);
+				}
+
+				// Message      
+				var tmpMessage = line.match(/^\[[0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2}\] .+?: (.*)/);
+				if(tmpMessage) {
+					// First Line of message with meta
+					message.lines.push(tmpMessage[1]);
+				}else{
+					// following lines without meta
+					message.lines.push(line);
+				}
+			});
+
+			// Add Last Message
+			that.messages.push(message); 
+
+			if(jumpToLastPage) {
+				that.currentPage = that.pageCount
+			}
+
+		})
+		.catch(function (error) {
+			// handle error
+			console.log(error);
+		})
+
+
+		window.addEventListener('wheel', function(e) {
+			if(!e.shiftKey) {
+				return;
+			}
+			if(e.deltaY / 120 < 0) {
+				that.pageChangeHandle('previous');
+			} else {
+				that.pageChangeHandle('next');
+			}
+		})
+
+		window.addEventListener('keydown', function(e) {
+			if(e.shiftKey) {
+				return;
+			}
+			console.log(e.which)
+			switch(e.which) {
+				case 37: 
+					that.pageChangeHandle('previous');
+				break;
+
+				case 39:
+					that.pageChangeHandle('next');
+				break;
+
+				default: return; // exit this handler for other keys
+			}
+		});
+
+	},
+	methods: {
+		paginationCallback: function(page) {
+      console.log(`Page  was selected. Do something about it`);
+    },
+		pageChangeHandle(value) {
+      switch (value) {
+        case 'next':
+					if(this.currentPage + 1 <= this.pageCount) {
+         	 this.currentPage += 1
+					}
+          break
+        case 'previous':
+					if(this.currentPage - 1 > 0) {
+         	 this.currentPage -= 1
+					}
+          break
+        default:
+					if(value > 0 && value <= this.pageCount) {
+          	this.currentPage = value
+					}
+      }
+		},
+		showAll() {
+			if(confirm("Achtung! Diese Aktion ist bei großer Anzahl Nachrichten sehr CPU intensiv und kann in seltenen Fällen als Nebenwirkung ein schwarzes Loch erzeugen.")) {
+				this.perPage = -1
+			}
+		}
+	},
+	computed: {
+		messagesCount() {
+			return this.messages.length
+		},
+		pageCount() {
+			return Math.ceil(this.messagesCount / this.perPage)
+		},
+		pagedMessages() {
+			if(this.perPage == -1) { return this.messages; }
+			var end = this.currentPage*this.perPage;
+			var start = end-this.perPage;
+
+			return this.messages.slice(start, end)
+		},
+		firstMessageDate() {
+			return parseWhatsAppDate(this.messages[0].timestamp);
+		},
+		lastMessageDate() {
+			return parseWhatsAppDate(this.messages[this.messages.length-1].timestamp);
+		},
+		timespan() {
+			var timespanMin = this.lastMessageDate.getTime() - this.firstMessageDate.getTime();
+			var timespanHours = timespanMin / (1000 * 3600 * 24);
+			return Math.round(timespanHours)
+		}
+	},
+	filters: {
+		formatDate(value) {
+			return value.toLocaleDateString(undefined, {year: 'numeric', month: '2-digit', day: '2-digit',  })
+		}
+	}
+});
+
+
+function parseWhatsAppDate(dateString) {
+	var d = dateString.match(/^(\d+).(\d+).(\d+), (\d+):(\d+):(\d+)/)
+	d.shift()
+	d= d.map(function (elm) {
+		return parseInt(elm)
+	})
+	d = new Date(2000+d[2], d[1]-1, d[0], d[3], d[4], d[5])
+	return d;
+}
 </script>
-<script src="app.js"></script>
+
+
 </body>
 </html>
