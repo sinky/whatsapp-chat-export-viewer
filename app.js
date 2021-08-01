@@ -51,8 +51,9 @@ var app = new Vue({
 
 				// Media
 				line = line.replace(/([a-zA-Z0-9-]+\.jpg)\ &lt;angeh�ngt>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
-				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.jpg)\>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
+				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.jpg|webp|gif)\>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.mp4)\>/g, '<div class="media"><video src="media/$1" controls=""></div>');
+				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\..+)\>/g, '<div class="media">Media: <a href="media/$1" target="blank">$1</a></div>');
 
 				// Username
 				var tmpUsername = line.match(/^\[[0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2}\] (.+?):/);
