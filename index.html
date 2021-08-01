@@ -4,7 +4,8 @@
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
 	<title>WhatsApp Chat</title>
-	<meta name="description" content="">
+	<meta name="description" content="Shows WhatsApp Chat Export">
+	<meta name="author" content="Marco Krage (my-azur.de)">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css" />
 	<link rel="stylesheet" href="style.css" />
@@ -25,7 +26,12 @@ html {
 		<div v-if="messages.length == 0">
 			loading ...
 		</div>
-		<template v-else v-for="message in pagedMessages" >
+		<template v-else v-for="(message, n) in pagedMessages" >
+
+			<div v-if="n == 0 || message.newDay" class="dateDivider">
+				<div class="date">{{message.date | formatDateDivider}}</div>
+			</div>
+
 			<div class="message" :class="{me: message.me}">
 				<div class="lines">
 					<div class="line" v-for="line in message.lines" v-html="line"></div>
@@ -43,24 +49,30 @@ html {
 
 		<div class="noprint">
 			<ul class="pagination" v-if="pagedMessages.length != messagesCount">
-				<li v-if="false" @click="pageChangeHandle('previous')" class="page-item">&#171;</li>
-				<li @click="pageChangeHandle(1)" :class="[currentPage==1 ? 'active' : '']" class="page-item">1</li>
+				<li v-if="false" @click="pageChange('previous')" class="page-item">&#171;</li>
+				<li @click="pageChange(1)" :class="[currentPage==1 ? 'active' : '']" class="page-item">1</li>
 				<li v-if="currentPage > (navNum*2)-1">&hellip;</li>
 				<template v-for="n in range(currentPage-navNum, currentPage+navNum, 1)">
-					<li v-if="n > 1 && n < pageCount" @click="pageChangeHandle(n)" class="page-item" :class="[currentPage==n ? 'active' : '']">{{n}}</li>
+					<li v-if="n > 1 && n < pageCount" @click="pageChange(n)" class="page-item" :class="[currentPage==n ? 'active' : '']">{{n}}</li>
 				</template>
 				<li v-if="currentPage < pageCount-navNum-1">&hellip;</li>
-				<li @click="pageChangeHandle(pageCount)" class="page-item" :class="[currentPage==pageCount ? 'active' : '']">{{pageCount}}</li>
-				<li v-if="false" @click="pageChangeHandle('next')" class="page-item">&#187;</li>
+				<li @click="pageChange(pageCount)" class="page-item" :class="[currentPage==pageCount ? 'active' : '']">{{pageCount}}</li>
+				<li v-if="false" @click="pageChange('next')" class="page-item">&#187;</li>
 			</ul>
 			<p>
-				<button v-if="pagedMessages.length != messagesCount" @click="showAll()">Alle Anzeigen</button>
+				Pro Seite: <select @change="changePerPage(event.target.value)">
+					<option>5</option>
+					<option>50</option>
+					<option>100</option>
+					<option>1000</option>
+					<option value="-1">alle</option>
+				</select>
 			</p>
 	</div>
 
 		<p v-if="messages.length > 0">
-			Es wurden {{messagesCount}} Nachrichten über {{timespan}} Tagen geladen.
-			Zeitraum: {{firstMessageDate | formatDate}} bis {{lastMessageDate | formatDate}}
+			Es wurden {{messagesCount}} Nachrichten über {{statsTimespan}} Tagen geladen.
+			Zeitraum: {{statsFirstMessageDate | formatDate}} bis {{statsLastMessageDate | formatDate}}
 		</p>
 	
 </div>

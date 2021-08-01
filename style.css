@@ -42,7 +42,8 @@ h1 {
   word-wrap: break-word;
 }
 
-.message .media img {
+.message .media img,
+.message .media video {
   max-width: 100%;
   height: auto;
 }
@@ -64,6 +65,19 @@ h1 {
 }
 
 
+.dateDivider {
+	text-align: center;
+	margin-bottom: 1em;;
+}
+.dateDivider .date {
+	font-size: small;
+	background-color: #c6c7e1;
+	border-radius: 10px;
+	padding: 3px 14px;
+	display: inline-block;
+}
+
+
 ul.pagination {
   padding: 0;
   list-style: none;
@@ -82,7 +96,7 @@ button {
 	cursor: pointer;
 }
 
-.pagination li:hover,
+.pagination .page-item:hover,
 button:hover {
 	background: #fff;
 }

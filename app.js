@@ -1,4 +1,3 @@
-const range = (start, stop, step) => Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
 
 var app = new Vue({
 	el: '#app',
@@ -7,8 +6,7 @@ var app = new Vue({
 			messages: [],
 			perPage: perPage,
 			currentPage: 1,
-			navNum: 2,
-			stats: null
+			navNum: 2
 		}
 	},
 	mounted: function() {
@@ -21,6 +19,7 @@ var app = new Vue({
 
 			var lines = data.split(/(\n|\r)/);
 
+			// Debug: Import kürzen
 			//lines = lines.slice(0, 200)
 
 			var message;
@@ -40,7 +39,11 @@ var app = new Vue({
 					var tmpTimestamp = line.match(/^\[([0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2})\]/);
 					if(tmpTimestamp) {
 						message.timestamp = tmpTimestamp[1];
-					}          
+						message.date = parseWhatsAppDate(tmpTimestamp[1]);
+						if(that.messages.length > 1) { // Ab der zweiten Nachricht
+							message.newDay = !that.sameDay(that.messages[that.messages.length-1].date, message.date)
+						}
+					}
 				}
 
 				// Special Chars
@@ -49,6 +52,7 @@ var app = new Vue({
 				// Media
 				line = line.replace(/([a-zA-Z0-9-]+\.jpg)\ &lt;angeh�ngt>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.jpg)\>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
+				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.mp4)\>/g, '<div class="media"><video src="media/$1" controls=""></div>');
 
 				// Username
 				var tmpUsername = line.match(/^\[[0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2}\] (.+?):/);
@@ -87,9 +91,9 @@ var app = new Vue({
 				return;
 			}
 			if(e.deltaY / 120 < 0) {
-				that.pageChangeHandle('previous');
+				that.pageChange('previous');
 			} else {
-				that.pageChangeHandle('next');
+				that.pageChange('next');
 			}
 		})
 
@@ -100,11 +104,11 @@ var app = new Vue({
 			console.log(e.which)
 			switch(e.which) {
 				case 37: 
-					that.pageChangeHandle('previous');
+					that.pageChange('previous');
 				break;
 
 				case 39:
-					that.pageChangeHandle('next');
+					that.pageChange('next');
 				break;
 
 				default: return; // exit this handler for other keys
@@ -113,10 +117,8 @@ var app = new Vue({
 
 	},
 	methods: {
-		paginationCallback: function(page) {
-      console.log(`Page  was selected. Do something about it`);
-    },
-		pageChangeHandle(value) {
+		pageChange(value) {
+			console.log('pageChangeHandle', value);
       switch (value) {
         case 'next':
 					if(this.currentPage + 1 <= this.pageCount) {
@@ -134,10 +136,21 @@ var app = new Vue({
 					}
       }
 		},
-		showAll() {
-			if(confirm("Achtung! Diese Aktion ist bei großer Anzahl Nachrichten sehr CPU intensiv und kann in seltenen Fällen als Nebenwirkung ein schwarzes Loch erzeugen.")) {
-				this.perPage = -1
+		changePerPage(n) {
+			console.log('changePerPage', n);
+			if(n == -1) {
+				if(confirm("Achtung! \n\nDiese Aktion ist sehr CPU intensiv und kann in seltenen Fällen als Nebenwirkung ein schwarzes Loch erzeugen. \n\nNe, aber das kann bei >10.000 Nachrichten etwas dauern oder den Browser crashen.") ) {
+					this.perPage = -1
+				}
+			}else{
+				this.perPage = n
 			}
+			if(jumpToLastPage) {
+				this.currentPage = this.pageCount
+			}
+		},
+		sameDay(a,b) {
+			return a.toDateString() === b.toDateString()
 		}
 	},
 	computed: {
@@ -154,14 +167,19 @@ var app = new Vue({
 
 			return this.messages.slice(start, end)
 		},
-		firstMessageDate() {
+		messagesDates() {
+			return this.messages.map(function (message) {
+				return message.date;
+			})
+		},
+		statsFirstMessageDate() {
 			return parseWhatsAppDate(this.messages[0].timestamp);
 		},
-		lastMessageDate() {
+		statsLastMessageDate() {
 			return parseWhatsAppDate(this.messages[this.messages.length-1].timestamp);
 		},
-		timespan() {
-			var timespanMin = this.lastMessageDate.getTime() - this.firstMessageDate.getTime();
+		statsTimespan() {
+			var timespanMin = this.statsLastMessageDate.getTime() - this.statsFirstMessageDate.getTime();
 			var timespanHours = timespanMin / (1000 * 3600 * 24);
 			return Math.round(timespanHours)
 		}
@@ -169,10 +187,16 @@ var app = new Vue({
 	filters: {
 		formatDate(value) {
 			return value.toLocaleDateString(undefined, {year: 'numeric', month: '2-digit', day: '2-digit',  })
+		},
+		formatDateDivider(value) {
+			return value.toLocaleDateString(undefined, {weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit',  })
 		}
 	}
 });
 
+function range(start, stop, step) {
+	return Array.from({ length: (stop - start) / step + 1}, (_, i) => start + (i * step));
+} 
 
 function parseWhatsAppDate(dateString) {
 	var d = dateString.match(/^(\d+).(\d+).(\d+), (\d+):(\d+):(\d+)/)
