@@ -7,4 +7,4 @@ WhatsApp Chat Export Javascript Viewer
 * Edit JS variables at the bottom of the ```index.html```
 * Serve the directory with a Webserver (e.g. Caddy Server)
 
-![Screenshot 2021-07-31 220734](https://user-images.githubusercontent.com/822246/127751801-1a8f06cc-7b92-4946-9064-410c2070f917.png)
+![Screenshot 2021-08-01 143809](https://user-images.githubusercontent.com/822246/127771112-bc656227-11d5-4de8-ad79-2bf912136c29.png)
