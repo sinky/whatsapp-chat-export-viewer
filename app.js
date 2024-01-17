@@ -51,6 +51,7 @@ var app = new Vue({
 
 				// Media
 				line = line.replace(/([a-zA-Z0-9-]+\.jpg)\ &lt;angeh�ngt>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
+				line = line.replace(/([a-zA-Z0-9-]+\.jpg)\ &lt;angehängt>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.jpg|webp|gif)\>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.mp4)\>/g, '<div class="media"><video src="media/$1" controls=""></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\..+)\>/g, '<div class="media">Media: <a href="media/$1" target="blank">$1</a></div>');
@@ -66,11 +67,15 @@ var app = new Vue({
 				var tmpMessage = line.match(/^\[[0-9]{2}\.[0-9]{2}\.[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2}\] .+?: (.*)/);
 				if(tmpMessage) {
 					// First Line of message with meta
-					message.lines.push(tmpMessage[1]);
-				}else{
-					// following lines without meta
-					message.lines.push(line);
+					line = tmpMessage[1];
 				}
+        
+        // link URLs 
+        line = line.autoLink()
+        
+        // following lines without meta
+        message.lines.push(line);
+				
 			});
 
 			// Add Last Message
