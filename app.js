@@ -53,6 +53,7 @@ var app = new Vue({
 				line = line.replace(/([a-zA-Z0-9-]+\.jpg)\ &lt;angeh�ngt>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
 				line = line.replace(/([a-zA-Z0-9-]+\.jpg)\ &lt;angehängt>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.jpg|webp|gif)\>/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
+				line = line.replace(/([a-zA-Z0-9-]+\.jpg|webp|gif) (Datei angehängt)/g, '<div class="media"><a href="media/$1" target="blank"><img src="media/$1" /></a></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\.mp4)\>/g, '<div class="media"><video src="media/$1" controls=""></div>');
 				line = line.replace(/\&lt;Anhang: ([a-zA-Z0-9-]+\..+)\>/g, '<div class="media">Media: <a href="media/$1" target="blank">$1</a></div>');
 
